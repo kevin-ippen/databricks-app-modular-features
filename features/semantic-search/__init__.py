@@ -2,22 +2,49 @@
 Semantic Search feature module.
 
 Provides configurable NL filter extraction, intent detection,
-LLM query rewriting, and Vector Search orchestration.
+LLM query rewriting, and Vector Search orchestration with
+multi-signal re-ranking.
 """
 
-from .filters import FilterConfig, extract_filters, build_vs_filter_dict
-from .intents import detect_intents, DEFAULT_INTENT_KEYWORDS
-from .rewriter import QueryRewriter, DEFAULT_REWRITE_PROMPT
-from .search import SearchConfig, SemanticSearchPipeline, embed_query, query_vector_search, rerank_results
+from .filters import (
+    FilterField,
+    FilterRegistry,
+    extract_filters,
+    build_vs_filter_dict,
+    fuzzy_match,
+)
+from .intents import (
+    IntentConfig,
+    detect_intents,
+    get_intent_boost_fields,
+    DEFAULT_INTENT_CONFIGS,
+)
+from .rewriter import (
+    QueryRewriter,
+    DEFAULT_REWRITE_PROMPT,
+)
+from .search import (
+    SearchConfig,
+    SemanticSearchPipeline,
+    embed_query,
+    aembed_query,
+    query_vector_search,
+    aquery_vector_search,
+    rerank_results,
+)
 
 __all__ = [
     # Filters
-    "FilterConfig",
+    "FilterField",
+    "FilterRegistry",
     "extract_filters",
     "build_vs_filter_dict",
+    "fuzzy_match",
     # Intents
+    "IntentConfig",
     "detect_intents",
-    "DEFAULT_INTENT_KEYWORDS",
+    "get_intent_boost_fields",
+    "DEFAULT_INTENT_CONFIGS",
     # Rewriter
     "QueryRewriter",
     "DEFAULT_REWRITE_PROMPT",
@@ -25,6 +52,8 @@ __all__ = [
     "SearchConfig",
     "SemanticSearchPipeline",
     "embed_query",
+    "aembed_query",
     "query_vector_search",
+    "aquery_vector_search",
     "rerank_results",
 ]
