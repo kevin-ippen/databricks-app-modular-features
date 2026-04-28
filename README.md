@@ -36,6 +36,7 @@ Larger modules with varying levels of production-readiness. The "Effort" column 
 | 13 | **Genie Integration** | ~700 | Moderate | Multi-space routing + conversation polling. The Genie API interaction (start conversation → poll → extract results) is the hard part — this handles it. You bring your own space IDs and routing keywords. You need Genie Spaces configured in your workspace first. |
 | 14 | **Agent Router** | ~1,050 | Significant | LangGraph supervisor with intent classification, retry, and agent exclusion. This is a reference architecture — it provides the orchestration skeleton but **not** the agents themselves. Your actual routing keywords, agent implementations, and graph shape will be different. Study the patterns, then build your own. |
 | 15 | **Knowledge Graph** | ~550 | Moderate | Entity/relationship CRUD with Lakebase. The storage and query layer is clean. The harder problem it doesn't solve is *extraction* — deciding what entities to create and when. That's your application logic. |
+| 16 | **Image Generation & Vision** | ~550 | Low-Moderate | FMAPI Responses API client for text-to-image, image-to-image, and vision analysis. Sync + async, FastAPI endpoints (generate, analyze, file upload), React hook + preview component. Uses OpenAI-compatible API with `image_generation` tool. Requires an FMAPI endpoint that supports image generation (e.g., GPT-5.x). |
 
 ### Effort Guide
 
