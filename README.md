@@ -1,8 +1,8 @@
 # Databricks App Modular Features
 
-Production-tested, drop-in features for Databricks Apps. Built from real applications, extracted into composable modules you can adopt individually.
+Production-tested, drop-in features for Databricks Apps. Composable modules you can adopt individually, deployed via Databricks Asset Bundles (DABs).
 
-Each feature is **opinionated** — one implementation, battle-tested in production. No framework soup, no decision paralysis. Copy the module, configure your env vars, ship.
+Each feature is **opinionated** — one implementation, battle-tested in production. No framework soup, no decision paralysis. Pick a module, parameterize it for your domain, deploy with `databricks bundle deploy`.
 
 ## Feature Catalog
 
@@ -36,8 +36,8 @@ Each feature is **opinionated** — one implementation, battle-tested in product
 1. **Pick features** from the catalog above
 2. **Check dependencies** — see [ARCHITECTURE.md](ARCHITECTURE.md) for the full dependency graph
 3. **Copy the module** into your app (each feature is self-contained in its directory)
-4. **Configure env vars** — each feature's README lists exactly what it needs
-5. **Wire into your FastAPI app** — import the router/service, mount it
+4. **Parameterize** — swap catalog names, endpoint names, Genie space IDs via env vars or `databricks.yml` variables
+5. **Deploy** — `databricks bundle deploy -t dev`
 
 ### Example: Add Chat + Voice to an existing app
 
@@ -57,28 +57,49 @@ app.include_router(asr_router, prefix="/api/asr")
 ```
 
 ```yaml
+# databricks.yml (parameterized per-target)
+variables:
+  serving_endpoint:
+    default: databricks-claude-sonnet-4-6
+  tts_endpoint:
+    default: my-tts-endpoint
+  asr_endpoint:
+    default: my-asr-endpoint
+  catalog:
+    default: my_catalog
+
+targets:
+  dev:
+    default: true
+    variables:
+      catalog: dev_catalog
+  prod:
+    variables:
+      catalog: prod_catalog
+```
+
+```yaml
 # app.yaml
-command:
-  - uvicorn
-  - app:app
-  - --host=0.0.0.0
-  - --port=8000
+command: ["uvicorn", "app:app", "--host=0.0.0.0", "--port=8000"]
 env:
   - name: SERVING_ENDPOINT
-    value: databricks-claude-sonnet-4-6
+    value: ${var.serving_endpoint}
   - name: TTS_ENDPOINT
-    value: your-tts-endpoint
+    value: ${var.tts_endpoint}
   - name: ASR_ENDPOINT
-    value: your-asr-endpoint
+    value: ${var.asr_endpoint}
+  - name: CATALOG
+    value: ${var.catalog}
 ```
 
 ## Repo Structure
 
 ```
-foundation/          # Shared infrastructure (auth, lakebase, config, llm)
-features/            # Drop-in features (chat, voice, search, files, etc.)
-examples/            # Runnable example apps composing multiple features
-docs/                # Architecture, dependency map, migration guide
+databricks.yml           # DAB config — variables, targets, resources
+foundation/              # Shared infrastructure (auth, lakebase, config, llm)
+features/                # Drop-in features (chat, voice, search, files, etc.)
+examples/                # Runnable example apps composing multiple features
+docs/                    # Architecture, dependency map
 ```
 
 ## Docs
@@ -86,13 +107,9 @@ docs/                # Architecture, dependency map, migration guide
 - [FEATURES.md](FEATURES.md) — Detailed per-feature documentation with API surfaces
 - [ARCHITECTURE.md](ARCHITECTURE.md) — Dependency graph, composition patterns, example apps
 
-## Origin
+## Design Principles
 
-These features were extracted from production Databricks Apps including:
-- **Consumer AI App** — Multi-agent analytics chatbot with voice, Genie integration, knowledge graph
-- **LakeFind** — Semantic search + conversational Q&A for vacation rentals
-- **Research Intelligence** — Document collections, annotations, corpus search
-- **Conversational Analytics** — Pizza delivery analytics with Lakebase persistence
-- **Real-Time RecSys** — Two-tower retrieval + ranking for personalization
-
-Each feature has been generalized to remove domain-specific logic while preserving the production patterns that make them work.
+- **Domain-agnostic** — No hardcoded business logic. Every domain-specific value (catalog names, endpoint names, space IDs, keywords) is parameterized via env vars or DAB variables.
+- **DAB-native** — Each example app includes a `databricks.yml` with multi-target support (dev/staging/prod). Deploy with `databricks bundle deploy -t <target>`.
+- **Composable** — Features are additive. Start with Chat, add Voice later, add Memory when you need persistence. No feature assumes another is present unless listed in its dependency table.
+- **FastAPI + React** — Backend is always FastAPI. Frontend is always React + TypeScript + Vite. One stack, no options to bikeshed.

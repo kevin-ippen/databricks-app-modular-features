@@ -1,6 +1,6 @@
 # Architecture
 
-How the 15 modules compose together, what depends on what, and how to build apps from them.
+How the 15 modules compose together, what depends on what, and how to build apps from them. Everything is deployed via Databricks Asset Bundles (DABs) with parameterized variables per target environment.
 
 ## Dependency Graph
 
@@ -65,6 +65,8 @@ graph TD
 
 ```
 databricks-app-modular-features/
+│
+├── databricks.yml                   # DAB config: variables, targets, app resources
 │
 ├── foundation/                      # Shared infrastructure
 │   ├── auth/                        # [1] Auth & Identity
@@ -265,6 +267,62 @@ Everything — multi-agent routing across Genie, RAG, search, with voice I/O and
 ```
 
 **Databricks resources**: Everything (FMAPI, Vector Search, Lakebase, Genie Space(s), TTS/ASR endpoints, UC Volume)
+
+## DAB Variables (Parameterization)
+
+Every domain-specific value is a DAB variable in `databricks.yml`. No hardcoded catalogs, endpoints, or space IDs.
+
+```yaml
+# databricks.yml
+variables:
+  # Foundation
+  catalog:
+    description: Unity Catalog catalog name
+    default: my_catalog
+  serving_endpoint:
+    description: FMAPI model endpoint
+    default: databricks-claude-sonnet-4-6
+  haiku_endpoint:
+    description: Fast/cheap model for summarization
+    default: databricks-claude-haiku-4-5
+
+  # Voice I/O
+  tts_endpoint:
+    description: Text-to-speech model serving endpoint
+  asr_endpoint:
+    description: Speech-to-text model serving endpoint
+
+  # Search
+  vs_endpoint:
+    description: Vector Search endpoint name
+  vs_index:
+    description: Vector Search index full name (catalog.schema.index)
+
+  # Genie
+  genie_space_ids:
+    description: Comma-separated domain:space_id pairs
+    default: "sales:abc123,marketing:def456"
+
+  # Lakebase
+  lakebase_instance:
+    description: Lakebase database instance name
+
+targets:
+  dev:
+    default: true
+    variables:
+      catalog: dev_catalog
+  staging:
+    variables:
+      catalog: staging_catalog
+  prod:
+    variables:
+      catalog: prod_catalog
+```
+
+These variables flow into `app.yaml` via `${var.catalog}`, `${var.serving_endpoint}`, etc. Each feature reads them from environment at runtime via the Config module.
+
+---
 
 ## Integration Guide
 

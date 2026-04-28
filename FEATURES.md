@@ -2,6 +2,8 @@
 
 Detailed documentation for each of the 15 modules. For each feature: what it does, API surface, env vars needed, Databricks resources required, and integration pattern.
 
+All features are domain-agnostic. Business-specific values (catalog names, endpoint names, Genie space IDs, search filter patterns, ranking weights) are parameterized via environment variables or DAB variables in `databricks.yml`.
+
 ---
 
 ## Foundation Modules
@@ -324,7 +326,7 @@ CREATE TABLE messages (
 
 ### [8] Semantic Search
 
-**What it does**: Takes a natural language query, extracts structured filters (price, bedroom count, categories), rewrites the query for better retrieval, queries Vector Search with metadata filters, and re-ranks results using multiple signals.
+**What it does**: Takes a natural language query, extracts structured filters (price ranges, categories, attributes), rewrites the query for better retrieval, queries Vector Search with metadata filters, and re-ranks results using multiple signals.
 
 **API Surface**:
 
@@ -337,17 +339,17 @@ async def search(
     intent_boost: bool = True,       # Apply intent-aware re-ranking
 ) -> SearchResults: ...
 
-# NL filter extraction
-def extract_filters(query: str) -> Tuple[str, Dict[str, Any]]:
-    """Parse 'under $200 3br lakefront' → ('lakefront', {max_price: 200, bedrooms: 3})"""
+# NL filter extraction (configure patterns per domain)
+def extract_filters(query: str, filter_patterns: dict) -> Tuple[str, Dict[str, Any]]:
+    """Parse 'under $50 wireless headphones' → ('wireless headphones', {max_price: 50})"""
     ...
 
-# Re-ranking weights (configurable)
+# Re-ranking weights (configurable per use case)
 RANKING_WEIGHTS = {
     "vector_score": 0.50,
     "composite": 0.25,
     "intent_bonus": 0.15,
-    "review_boost": 0.10,
+    "metadata_boost": 0.10,
 }
 ```
 
@@ -355,7 +357,7 @@ RANKING_WEIGHTS = {
 
 **Databricks resources**: Vector Search endpoint + Delta Sync index, Foundation Model API (for query rewriting)
 
-**Key insight**: Pure vector similarity isn't enough. This module adds NL filter extraction (regex + fuzzy matching), query rewriting (LLM expands "dock fishing quiet" → broader retrieval terms), and multi-signal re-ranking (vector distance + metadata signals + detected user intent).
+**Key insight**: Pure vector similarity isn't enough. This module adds NL filter extraction (configurable regex + fuzzy matching), query rewriting (LLM expands terse queries into broader retrieval terms), and multi-signal re-ranking (vector distance + metadata signals + detected user intent). Filter patterns and ranking weights are parameterized per domain.
 
 ---
 
@@ -523,7 +525,7 @@ class GenieClient:
     ) -> GenieResult: ...
 
     def detect_space(self, question: str) -> str:
-        """Keyword-based space routing. 'revenue by store' → 'sales' space."""
+        """Keyword-based space routing. Configurable keyword→space mapping."""
         ...
 
 @dataclass
@@ -539,7 +541,7 @@ class GenieResult:
 
 **Databricks resources**: Genie Space(s) with configured instruction tables
 
-**Key insight**: Keyword matching for space routing is surprisingly effective. "What's our CAC this quarter?" matches `executive` space via keywords like CAC, KPI, retention. More complex routing can use the LLM Client for intent classification.
+**Key insight**: Keyword matching for space routing is surprisingly effective. Configure a keyword→space mapping (e.g., revenue/pipeline keywords → sales space, campaign/attribution → marketing space). More complex routing can use the LLM Client for intent classification.
 
 ---
 
