@@ -41,26 +41,33 @@ class FilterClause:
     operator: FilterOperator
     value: Any
 
-    def to_sql(self) -> str:
-        """Convert to SQL WHERE clause fragment."""
+    def to_sql(self) -> tuple[str, list]:
+        """Convert to parameterized SQL WHERE clause fragment.
+
+        Returns:
+            (sql_fragment, params) — use with parameterized queries to prevent SQL injection.
+            Example: cursor.execute(f"SELECT * FROM t WHERE {sql}", params)
+        """
         op = self.operator
 
         if op == FilterOperator.IN:
-            values = ", ".join(f"'{v}'" for v in (self.value if isinstance(self.value, list) else [self.value]))
-            return f"{self.column} IN ({values})"
+            vals = self.value if isinstance(self.value, list) else [self.value]
+            placeholders = ", ".join(["%s"] * len(vals))
+            return f"{self.column} IN ({placeholders})", vals
         elif op == FilterOperator.NOT_IN:
-            values = ", ".join(f"'{v}'" for v in (self.value if isinstance(self.value, list) else [self.value]))
-            return f"{self.column} NOT IN ({values})"
+            vals = self.value if isinstance(self.value, list) else [self.value]
+            placeholders = ", ".join(["%s"] * len(vals))
+            return f"{self.column} NOT IN ({placeholders})", vals
         elif op == FilterOperator.LIKE:
-            return f"{self.column} LIKE '%{self.value}%'"
+            return f"{self.column} LIKE %s", [f"%{self.value}%"]
         elif op == FilterOperator.NOT_LIKE:
-            return f"{self.column} NOT LIKE '%{self.value}%'"
+            return f"{self.column} NOT LIKE %s", [f"%{self.value}%"]
         elif op == FilterOperator.IS_NULL:
-            return f"{self.column} IS NULL"
+            return f"{self.column} IS NULL", []
         elif op == FilterOperator.IS_NOT_NULL:
-            return f"{self.column} IS NOT NULL"
+            return f"{self.column} IS NOT NULL", []
         else:
-            return f"{self.column} {op.value} '{self.value}'"
+            return f"{self.column} {op.value} %s", [self.value]
 
     def to_dict(self) -> dict[str, Any]:
         return {"column": self.column, "operator": self.operator.value, "value": self.value}
@@ -82,11 +89,20 @@ class StructuredQuery:
         """Get combined text for semantic search."""
         return " ".join(self.keywords)
 
-    def get_filter_sql(self) -> Optional[str]:
-        """Generate SQL WHERE clause from filters (without 'WHERE')."""
+    def get_filter_sql(self) -> Optional[tuple[str, list]]:
+        """Generate parameterized SQL WHERE clause from filters (without 'WHERE').
+
+        Returns:
+            (sql_fragment, params) or None if no filters.
+        """
         if not self.filters:
             return None
-        return " AND ".join(f.to_sql() for f in self.filters)
+        fragments, all_params = [], []
+        for f in self.filters:
+            sql, params = f.to_sql()
+            fragments.append(sql)
+            all_params.extend(params)
+        return " AND ".join(fragments), all_params
 
     def to_dict(self) -> dict[str, Any]:
         return {
