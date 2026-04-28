@@ -1,0 +1,59 @@
+bundle:
+  name: modular-features-app
+
+variables:
+  # Foundation
+  catalog:
+    description: Unity Catalog catalog name
+    default: my_catalog
+  serving_endpoint:
+    description: FMAPI model endpoint for chat/agents
+    default: databricks-claude-sonnet-4-6
+  haiku_endpoint:
+    description: Fast/cheap model for summarization and routing
+    default: databricks-claude-haiku-4-5
+
+  # Voice I/O (feature [6])
+  tts_endpoint:
+    description: Text-to-speech model serving endpoint name
+  asr_endpoint:
+    description: Speech-to-text model serving endpoint name
+
+  # Search (features [8], [9])
+  vs_endpoint:
+    description: Vector Search endpoint name
+  vs_index:
+    description: Vector Search index (catalog.schema.index)
+
+  # Genie (feature [13])
+  genie_spaces:
+    description: "Comma-separated domain:space_id pairs (e.g. sales:abc123,marketing:def456)"
+    default: ""
+
+  # Lakebase (feature [2])
+  lakebase_instance:
+    description: Lakebase database instance name
+
+  # File storage (feature [10])
+  file_volume_path:
+    description: UC Volume path for file uploads (e.g. /Volumes/catalog/schema/uploads)
+
+targets:
+  dev:
+    default: true
+    workspace:
+      host: ${var.workspace_host}
+    variables:
+      catalog: dev_catalog
+
+  staging:
+    workspace:
+      host: ${var.workspace_host}
+    variables:
+      catalog: staging_catalog
+
+  prod:
+    workspace:
+      host: ${var.workspace_host}
+    variables:
+      catalog: prod_catalog
