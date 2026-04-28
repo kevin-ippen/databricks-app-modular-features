@@ -37,6 +37,10 @@ Larger modules with varying levels of production-readiness. The "Effort" column 
 | 14 | **Agent Router** | ~1,050 | Significant | LangGraph supervisor with intent classification, retry, and agent exclusion. This is a reference architecture — it provides the orchestration skeleton but **not** the agents themselves. Your actual routing keywords, agent implementations, and graph shape will be different. Study the patterns, then build your own. |
 | 15 | **Knowledge Graph** | ~550 | Moderate | Entity/relationship CRUD with Lakebase. The storage and query layer is clean. The harder problem it doesn't solve is *extraction* — deciding what entities to create and when. That's your application logic. |
 | 16 | **Image Generation & Vision** | ~550 | Low-Moderate | FMAPI Responses API client for text-to-image, image-to-image, and vision analysis. Sync + async, FastAPI endpoints (generate, analyze, file upload), React hook + preview component. Uses OpenAI-compatible API with `image_generation` tool. Requires an FMAPI endpoint that supports image generation (e.g., GPT-5.x). |
+| 17 | **Message Feedback** | ~385 | Low | Thumbs up/down on chat messages. Lakebase-backed upsert (one reaction per user per message), per-conversation aggregation, time-series stats. FastAPI router + service with dependency-injected connection. |
+| 18 | **Data Table** | ~235 | Copy-paste | Generic sortable React table with type-aware cell formatting (money, percent, number, date). Column config via props, inline styles (no CSS deps), row click handler, empty state. |
+| 19 | **Health Check** | ~60 | Copy-paste | `/health` endpoint with optional dependency checks (Lakebase, FMAPI, etc.). Returns healthy/degraded status with per-check results. Useful for App load balancers and monitoring. |
+| 20 | **Markdown Renderer** | ~100 | Copy-paste | react-markdown + remark-gfm + rehype-raw with CSS variable theming. Custom renderers for headings, code blocks (inline + block), links, tables. Light/dark mode via CSS vars. |
 
 ### Effort Guide
 
